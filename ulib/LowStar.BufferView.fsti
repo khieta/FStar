@@ -49,9 +49,11 @@ type view (a:Type) (b:Type) =
 ///
 /// Being indexed by both the `src` and `dest` allows `buffer_view` to
 /// remain in universe 0.
-val buffer_view (src:Type0) (dest:Type) (r1 r2: srel src): Type0
+val mbuffer_view (src:Type0) (dest:Type) (r1 r2: srel src): Type0
 
 let trivial_preorder (a:Type0): srel a = fun _ _ -> True
+
+let buffer_view src dest = mbuffer_view src dest (trivial_preorder src) (trivial_preorder src)
 
 /// `buffer b`: In contrast to `buffer_view`, `buffer b` hides the
 /// source type of the view. As such, it is likely more convenient to
@@ -73,7 +75,7 @@ type buffer (dest:Type) : Type u#1 =
       src: Type0 ->
       rrel: srel src ->
       rel: srel src ->
-      v: buffer_view src dest rrel rel ->
+      v: mbuffer_view src dest rrel rel ->
       buffer dest
 
 /// `mk_buffer_view`: The main constructor

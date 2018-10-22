@@ -1,10 +1,10 @@
 module LowStar.BufferView
 
 noeq
-type buffer_view (a:Type0) (b:Type u#b) (r1 r2: srel a): Type0 =
+type mbuffer_view (a:Type0) (b:Type u#b) (r1 r2: srel a): Type0 =
   | BufferView: buf:mbuffer a r1 r2
               -> v:view a b{length buf % View?.n v == 0}
-              -> buffer_view a b r1 r2
+              -> mbuffer_view a b r1 r2
 
 let mk_buffer_view #src #dest #rrel #rel b v =
   Buffer src rrel rel (BufferView b v)
