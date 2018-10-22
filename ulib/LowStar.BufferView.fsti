@@ -13,7 +13,8 @@ module LowStar.BufferView
  * to elements of `b`.
  *
  **)
-open LowStar.Buffer
+open LowStar.Monotonic.Buffer
+
 module HS=FStar.HyperStack
 module B=LowStar.Buffer
 
@@ -48,7 +49,9 @@ type view (a:Type) (b:Type) =
 ///
 /// Being indexed by both the `src` and `dest` allows `buffer_view` to
 /// remain in universe 0.
-val buffer_view (src:Type0) (dest:Type) : Type0
+val buffer_view (src:Type0) (dest:Type) (r1 r2: srel src): Type0
+
+let trivial_preorder (a:Type0): srel a = fun _ _ -> True
 
 /// `buffer b`: In contrast to `buffer_view`, `buffer b` hides the
 /// source type of the view. As such, it is likely more convenient to
@@ -61,15 +64,21 @@ val buffer_view (src:Type0) (dest:Type) : Type0
 /// This means, for instance, that values of `buffer b` cannot be
 /// stored in the heap.
 ///
-/// We leave its defnition transparent in case clients wish to
+/// We leave its definition transparent in case clients wish to
 /// manipulate both the `src` and `dest` types explicitly (e.g., to
 /// stay in a lower universe)
-let buffer (dest:Type) : Type u#1 = (src:Type0 & buffer_view src dest)
-
+noeq
+type buffer (dest:Type) : Type u#1 =
+  | Buffer:
+      src: Type0 ->
+      rrel: srel src ->
+      rel: srel src ->
+      v: buffer_view src dest rrel rel ->
+      buffer dest
 
 /// `mk_buffer_view`: The main constructor
-val mk_buffer_view (#src #dest:Type)
-                   (b:B.buffer src)
+val mk_buffer_view (#src #dest:Type) (#rrel #rel: srel src)
+                   (b:mbuffer src rrel rel)
                    (v:view src dest{
                      length b % View?.n v == 0
                    })
@@ -77,30 +86,36 @@ val mk_buffer_view (#src #dest:Type)
 
 
 /// `as_buffer`: Projecting the underlying B.buffer from its view
-val as_buffer (#b : Type) (v:buffer b) : B.buffer (dfst v)
+val as_buffer (#b : Type) (v:buffer b): mbuffer (Buffer?.src v) (Buffer?.rrel v) (Buffer?.rel v)
 
 /// A lemma-relating projector to constructor
 val as_buffer_mk_buffer_view (#src #dest:Type)
-                             (b:B.buffer src)
+                             (#rrel #rel: srel src)
+                             (b:mbuffer src rrel rel)
                              (v:view src dest{
                                length b % View?.n v == 0
                               })
     : Lemma (let bv = mk_buffer_view b v in
-             dfst bv == src /\
+             Buffer?.src bv == src /\
+             Buffer?.rrel bv == rrel /\
+             Buffer?.rel bv == rel /\
              as_buffer bv == b)
             [SMTPat (as_buffer (mk_buffer_view b v) == b)]
 
 /// `get_view`: Projecting the view functions itself
-val get_view  (#b : Type) (v:buffer b) : view (dfst v) b
+val get_view  (#b : Type) (v:buffer b) : view (Buffer?.src v) b
 
 /// A lemma-relating projector to constructor
 val get_view_mk_buffer_view (#src #dest:Type)
-                            (b:B.buffer src)
+                            (#rrel #rel: srel src)
+                            (b:mbuffer src rrel rel)
                             (v:view src dest{
                                length b % View?.n v == 0
                              })
     : Lemma (let bv = mk_buffer_view b v in
-             dfst bv == src /\
+             Buffer?.src bv == src /\
+             Buffer?.rrel bv == rrel /\
+             Buffer?.rel bv == rel /\
              get_view bv == v)
             [SMTPat (get_view (mk_buffer_view b v) == v)]
 
@@ -137,6 +152,11 @@ val view_indexing (#b: _) (vb:buffer b) (i:nat{i < length vb})
            let n = View?.n (get_view vb) in
            n <= length vb * n - i * n)
 
+let wbuffer a = vb:buffer a {
+  Buffer?.rel vb == trivial_preorder (Buffer?.src vb) /\
+  Buffer?.rrel vb == trivial_preorder (Buffer?.src vb)
+}
+
 /// `sel h vb i` : selects element at index `i` from the buffer `vb` in heap `h`
 val sel (#b: _)
         (h:HS.mem)
@@ -147,14 +167,14 @@ val sel (#b: _)
 /// `upd h vb i x`: stores `x` at index `i` in the buffer `vb` in heap `h`
 val upd (#b: _)
         (h:HS.mem)
-        (vb:buffer b{live h vb})
+        (vb:wbuffer b{live h vb})
         (i:nat{i < length vb})
         (x:b)
   : GTot HS.mem
 
 /// `sel_upd`: A classic select/update lemma for reasoning about maps
 val sel_upd (#b:_)
-            (vb:buffer b)
+            (vb:wbuffer b)
             (i:nat{i < length vb})
             (j:nat{j < length vb})
             (x:b)
@@ -165,7 +185,7 @@ val sel_upd (#b:_)
           [SMTPat (sel (upd h vb i x) vb j)]
 
 val lemma_upd_with_sel (#b:_)
-                       (vb:buffer b)
+                       (vb:wbuffer b)
                        (i:nat{i < length vb})
                        (h:HS.mem{live h vb})
   :Lemma (upd h vb i (sel h vb i) == h)
@@ -180,7 +200,7 @@ let modifies (#b: _)
 /// `upd_modifies`: Footprint of `upd`
 val upd_modifies (#b: _)
                  (h:HS.mem)
-                 (vb:buffer b{live h vb})
+                 (vb:wbuffer b{live h vb})
                  (i:nat{i < length vb})
                  (x:b)
     : Lemma (ensures (modifies vb h (upd h vb i x) /\
