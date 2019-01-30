@@ -39,11 +39,6 @@ type option_val =
   | List of list<option_val>
   | Unset
 
-type options =
-    | Set
-    | Reset
-    | Restore
-
 val defaults                    : list<(string * option_val)>
 
 val init                        : unit    -> unit  //sets the current options to their defaults
@@ -98,7 +93,6 @@ type opt_type =
 val desc_of_opt_type            : opt_type -> option<string>
 val all_specs_with_types        : list<(char * string * opt_type * string)>
 val settable                    : string -> bool
-val resettable                  : string -> bool
 
 val abort_counter : ref<int>
 
@@ -181,7 +175,7 @@ val query_stats                 : unit    -> bool
 val record_hints                : unit    -> bool
 val reuse_hint_for              : unit    -> option<string>
 val set_option                  : string  -> option_val -> unit
-val set_options                 : options -> string -> parse_cmdline_res
+val set_options                 : string -> parse_cmdline_res
 val should_be_already_cached    : string  -> bool
 val should_print_message        : string  -> bool
 val should_extract              : string  -> bool
