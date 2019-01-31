@@ -1397,9 +1397,10 @@ let parse_settings ns : list<(list<string> * bool)> =
       let s = FStar.Util.trim_string s in
       if s = "" then []
       else with_cache (fun s ->
-             FStar.Util.split s " "
-             |> List.map parse_one_setting) s)
-             |> List.rev
+                        FStar.Util.split s " "
+                        |> List.filter (fun s -> s <> "")
+                        |> List.map parse_one_setting) s)
+       |> List.rev
 
 let __temp_no_proj               s  = get___temp_no_proj() |> List.contains s
 let __temp_fast_implicits        () = lookup_opt "__temp_fast_implicits" as_bool
