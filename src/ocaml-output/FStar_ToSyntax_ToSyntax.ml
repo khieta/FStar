@@ -108,6 +108,7 @@ let (trans_pragma : FStar_Parser_AST.pragma -> FStar_Syntax_Syntax.pragma) =
     | FStar_Parser_AST.PushOptions sopt ->
         FStar_Syntax_Syntax.PushOptions sopt
     | FStar_Parser_AST.PopOptions  -> FStar_Syntax_Syntax.PopOptions
+    | FStar_Parser_AST.RestartSolver  -> FStar_Syntax_Syntax.RestartSolver
     | FStar_Parser_AST.LightOff  -> FStar_Syntax_Syntax.LightOff
   
 let (as_imp :

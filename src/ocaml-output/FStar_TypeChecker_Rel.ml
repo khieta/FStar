@@ -11189,7 +11189,7 @@ let (discharge_guard' :
                                   (fun uu____29303  ->
                                      (let uu____29305 =
                                         FStar_Options.set_options
-                                          FStar_Options.Set "--no_tactics"
+                                          "--no_tactics"
                                          in
                                       FStar_All.pipe_left (fun a1  -> ())
                                         uu____29305);
