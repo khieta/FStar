@@ -1786,6 +1786,11 @@ let add_sigelt_to_env (env:Env.env) (se:sigelt) :Env.env =
   | Sig_pragma PopOptions
   | Sig_pragma (SetOptions _)
   | Sig_pragma (ResetOptions _) -> env
+
+  | Sig_pragma RestartSolver ->
+    env.solver.refresh ();
+    env
+
   | Sig_pragma _
   | Sig_new_effect_for_free _ -> env
   | Sig_new_effect ne ->

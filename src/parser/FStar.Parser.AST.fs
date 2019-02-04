@@ -190,6 +190,7 @@ type pragma =
   | ResetOptions of option<string>
   | PushOptions of option<string>
   | PopOptions
+  | RestartSolver
   | LightOff
 
 type decl' =
